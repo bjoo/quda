@@ -30,6 +30,9 @@ namespace quda
       mu2(field.Mu2())
     {
       if (!field.isNative()) errorQuda("Clover field %d order not supported", field.Order());
+      printfQuda("CloverInvertArge: threads=(%d,%d,%d), compute_tr_log=%d\n", 
+		     int(threads.x), int(threads.y), int(threads.z), compute_tr_log ? 1:0 );
+
     }
 
     __device__ __host__ auto init() const { return reduce_t(); }
@@ -52,28 +55,51 @@ namespace quda
       using Mat = HMatrix<real, N>;
       double trLogA = 0.0;
 
-      for (int ch = 0; ch < 2; ch++) {
+ #if 1
+      int ch=0;
+      while( ch < 2 ) {
+#else 
+	for(int ch=0; ch < 2; ++ch) {
+#endif
         Mat A = arg.clover(x_cb, parity, ch);
         A *= static_cast<real>(2.0); // factor of two is inherent to QUDA clover storage
 
+	
         if (Arg::twist) { // Compute (T^2 + mu2) first, then invert
           A = A.square();
           A += arg.mu2;
         }
 
-        // compute the Cholesky decomposition
         linalg::Cholesky<HMatrix, real, N> cholesky(A);
-
+#if 0
+	printf("Post-Cholesky ch=%d t(%d,%d,%d), b=(%d,%d,%d), bs=(%d,%d,%d) gs=(%d,%d,%d) \n", ch,
+                      int(threadIdx.x), int(threadIdx.y), int(threadIdx.z),
+                      int(blockIdx.x), int(blockIdx.y), int(blockIdx.z),
+                      int(blockDim.x), int(blockDim.y), int(blockDim.z),
+                      int(gridDim.x), int(gridDim.y), int(gridDim.z));
+#endif
         // Accumulate trlogA
         if (arg.compute_tr_log)
           for (int j = 0; j < N; j++) trLogA += 2.0 * log(cholesky.D(j));
 
         Mat Ainv = static_cast<real>(0.5) * cholesky.invert(); // return full inverse
         arg.inverse(x_cb, parity, ch) = Ainv;
+#if 1
+	ch++;
       }
-
+#else 
+      }
+#endif
       reduce_t result;
       parity ? result[1] = trLogA : result[0] = trLogA;
+
+ #if 0
+      printf("Done $(%d,%d,%d), b=(%d,%d,%d), bs=(%d,%d,%d) gs=(%d,%d,%d) result=(%e,%e) \n",
+                      int(threadIdx.x), int(threadIdx.y), int(threadIdx.z),
+                      int(blockIdx.x), int(blockIdx.y), int(blockIdx.z),
+                      int(blockDim.x), int(blockDim.y), int(blockDim.z),
+                      int(gridDim.x), int(gridDim.y), int(gridDim.z), result[0], result[1]);
+#endif
       return operator()(result, value);
     }
 

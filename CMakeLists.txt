@@ -375,7 +375,7 @@ set(CMAKE_CXX_STANDARD ${QUDA_CXX_STANDARD})
 if(QUDA_TARGET_CUDA)
   set(QUDA_DEF_OPT_LEVEL "-O3")
 elseif( QUDA_TARGET_HIP )
-  set(QUDA_DEF_OPT_LEVEL "-O1")
+  set(QUDA_DEF_OPT_LEVEL "-O3")
 endif()
 
 set(CMAKE_CXX_FLAGS_DEVEL
@@ -515,7 +515,8 @@ set(CMAKE_CUDA_FLAGS_DEBUG
     # for cmake 3.17+ we rely on
     find_package(CUDAToolkit)
   endif()  
-  
+ 
+   
   if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0" AND CMAKE_CUDA_COMPILER_ID MATCHES "NVIDIA")
     set(QUDA_HETEROGENEOUS_ATOMIC_SUPPORT ON)
     message(STATUS "Heterogeneous atomics supported: ${QUDA_HETEROGENEOUS_ATOMIC_SUPPORT}")

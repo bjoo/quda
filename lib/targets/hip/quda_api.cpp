@@ -383,7 +383,7 @@ namespace quda {
 
   bool qudaEventQuery_(qudaEvent_t &quda_event, const char *func, const char *file, const char *line)
    { 
-     hipEvent_t &event = reinterpret_cast<hipEvent_t&>(quda_event.event);
+     hipEvent_t event = reinterpret_cast<hipEvent_t>(quda_event.event);
      PROFILE(hipError_t error = hipEventQuery(event), QUDA_PROFILE_EVENT_QUERY);
      switch (error) {
      case hipSuccess: return true;
@@ -395,7 +395,7 @@ namespace quda {
 
   void qudaEventRecord_(qudaEvent_t &quda_event, qudaStream_t stream, const char *func, const char *file, const char *line)
     {
-      hipEvent_t &event = reinterpret_cast<hipEvent_t&>(quda_event.event);
+      hipEvent_t event = reinterpret_cast<hipEvent_t>(quda_event.event);
       PROFILE(hipError_t error = hipEventRecord(event, device::get_cuda_stream(stream)), QUDA_PROFILE_EVENT_RECORD);
       set_runtime_error(error, __func__, func, file, line);
     }

@@ -27,7 +27,7 @@ namespace quda
   };
 
   struct qudaEvent_t {
-    void *event;
+    mutable void* event;
   };
 
   /**

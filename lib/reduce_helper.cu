@@ -10,6 +10,7 @@ static device_reduce_t *h_reduce = nullptr;
 static device_reduce_t *hd_reduce = nullptr;
 
 static count_t *reduce_count = nullptr;
+
 static qudaEvent_t reduceEnd;
 
 namespace quda
@@ -23,7 +24,7 @@ namespace quda
     void *get_mapped_buffer() { return hd_reduce; }
     void *get_host_buffer() { return h_reduce; }
     count_t *get_count() { return reduce_count; }
-    qudaEvent_t &get_event() { return reduceEnd; }
+    qudaEvent_t& get_event() { return reduceEnd; }
 
     size_t buffer_size()
     {
@@ -95,11 +96,14 @@ namespace quda
       }
 
       reduceEnd = qudaEventCreate();
+      printfQuda("EVENT: %p created\n", reduceEnd.event);
     }
 
     void destroy()
     {
+      printfQuda("EVENT: %p destroyed.", reduceEnd.event);
       qudaEventDestroy(reduceEnd);
+      printfQuda(" post_destroy pointer is %p\n", reduceEnd.event);
 
       if (reduce_count) {
         device_free(reduce_count);

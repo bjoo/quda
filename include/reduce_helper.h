@@ -167,9 +167,12 @@ namespace quda
     {
       if (launch_error == QUDA_ERROR) return; // kernel launch failed so return
       if (launch_error == QUDA_ERROR_UNINITIALIZED) errorQuda("No reduction kernel appears to have been launched");
-      auto event = reducer::get_event();
+      qudaEvent_t&  event = reducer::get_event();
+
       qudaEventRecord(event, stream);
+      printfQuda("Recorded Event w. pointer %p in stream %d\n. Waiting on event", (void*)event.event, stream.idx);
       while (!qudaEventQuery(event)) {}
+      printfQuda("Event %p query returned success\n", event.event);
 
       // copy back result element by element and convert if necessary to host reduce type
       // unit size here may differ from system_atomic_t size, e.g., if doing double-double
@@ -265,6 +268,13 @@ namespace quda
       using BlockReduce = ::QudaCub::BlockReduce<T, block_size_x, ::QudaCub::BLOCK_REDUCE_WARP_REDUCTIONS, block_size_y>;
       __shared__ typename BlockReduce::TempStorage cub_tmp;
       __shared__ bool isLastBlockDone;
+#if 0
+      printf("t(%d,%d,%d), b=(%d,%d,%d), bs=(%d,%d,%d) gs=(%d,%d,%d) \n", 
+		      int(threadIdx.x), int(threadIdx.y), int(threadIdx.z),
+		      int(blockIdx.x), int(blockIdx.y), int(blockIdx.z),
+		      int(blockDim.x), int(blockDim.y), int(blockDim.z),
+		      int(gridDim.x), int(gridDim.y), int(gridDim.z));
+#endif
 
       T aggregate = Reducer::do_sum ? BlockReduce(cub_tmp).Sum(in) : BlockReduce(cub_tmp).Reduce(in, r);
 

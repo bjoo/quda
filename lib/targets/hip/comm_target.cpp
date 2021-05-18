@@ -120,7 +120,7 @@ void comm_create_neighbor_event(qudaEvent_t remote[2][QUDA_MAX_DIM], qudaEvent_t
         CHECK_HIP_ERROR(hipEventCreateWithFlags(&event, hipEventDisableTiming | hipEventInterprocess));
         local[dir][dim].event = event;
 	//DMH: FIXME
-        //CHECK_HIP_ERROR(hipIpcGetEventHandle(&handle, event));
+        CHECK_HIP_ERROR(hipIpcGetEventHandle(&handle, event));
         sendHandle = comm_declare_send_relative(&handle, dim, disp, sizeof(handle));
       }
 
@@ -141,7 +141,7 @@ void comm_create_neighbor_event(qudaEvent_t remote[2][QUDA_MAX_DIM], qudaEvent_t
       if (!comm_peer2peer_enabled(dir,dim)) continue;
       hipEvent_t event = nullptr;
       // DMH: FIXME
-      //CHECK_HIP_ERROR(hipIpcOpenEventHandle(&event, ipcRemoteEventHandle[dir][dim]));
+      CHECK_HIP_ERROR(hipIpcOpenEventHandle(&event, ipcRemoteEventHandle[dir][dim]));
       remote[dir][dim].event = reinterpret_cast<void*>(event);
     }
   }
@@ -151,8 +151,8 @@ void comm_destroy_neighbor_event(qudaEvent_t [2][QUDA_MAX_DIM], qudaEvent_t loca
 {
   for (int dim=0; dim<4; ++dim) {
     if (comm_dim(dim)==1) continue;
-    for (int dir = 0; dir <2; dir++) {
-      hipEvent_t &event = reinterpret_cast<hipEvent_t&>(local[dir][dim].event);
+    for (int dir= 0; dir <2; dir++) {
+      volatile auto event = reinterpret_cast<volatile hipEvent_t>(local[dir][dim].event);
       if (comm_peer2peer_enabled(dir, dim)) CHECK_HIP_ERROR(hipEventDestroy(event));
     } 
   } // iterate over dim
